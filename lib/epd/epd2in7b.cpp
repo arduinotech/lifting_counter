@@ -46,64 +46,64 @@ int Epd::Init(void) {
     }
     /* EPD hardware init start */
     Reset();
-     
+
     SendCommand(POWER_ON);
     WaitUntilIdle();
-   
+
     SendCommand(PANEL_SETTING);
     SendData(0xaf);        //KW-BF   KWR-AF    BWROTP 0f
-    
+
     SendCommand(PLL_CONTROL);
     SendData(0x3a);       //3A 100HZ   29 150Hz 39 200HZ    31 171HZ
-    
+
     SendCommand(POWER_SETTING);
     SendData(0x03);                  // VDS_EN, VDG_EN
     SendData(0x00);                  // VCOM_HV, VGHL_LV[1], VGHL_LV[0]
     SendData(0x2b);                  // VDH
     SendData(0x2b);                  // VDL
     SendData(0x09);                  // VDHR
-    
+
     SendCommand(BOOSTER_SOFT_START);
     SendData(0x07);
     SendData(0x07);
     SendData(0x17);
-    
+
     // Power optimization
     SendCommand(0xF8);
     SendData(0x60);
     SendData(0xA5);
-    
+
     // Power optimization
     SendCommand(0xF8);
     SendData(0x89);
     SendData(0xA5);
-    
+
     // Power optimization
     SendCommand(0xF8);
     SendData(0x90);
     SendData(0x00);
-    
+
     // Power optimization
     SendCommand(0xF8);
     SendData(0x93);
     SendData(0x2A);
-    
+
     // Power optimization
     SendCommand(0xF8);
     SendData(0x73);
     SendData(0x41);
-    
+
     SendCommand(VCM_DC_SETTING_REGISTER);
-    SendData(0x12);                   
+    SendData(0x12);
     SendCommand(VCOM_AND_DATA_INTERVAL_SETTING);
     SendData(0x87);        // define by OTP
-    
+
     SetLut();
-    
+
     SendCommand(PARTIAL_DISPLAY_REFRESH);
-    SendData(0x00);  
+    SendData(0x00);
     /* EPD hardware init end */
-    
+
     return 0;
 
 }
@@ -130,87 +130,87 @@ void Epd::SendData(unsigned char data) {
 void Epd::WaitUntilIdle(void) {
     while(DigitalRead(busy_pin) == 0) {      //0: busy, 1: idle
         DelayMs(100);
-    }      
+    }
 }
 
 /**
- *  @brief: module reset. 
- *          often used to awaken the module in deep sleep, 
+ *  @brief: module reset.
+ *          often used to awaken the module in deep sleep,
  *          see Epd::Sleep();
  */
 void Epd::Reset(void) {
     DigitalWrite(reset_pin, LOW);
     DelayMs(200);
     DigitalWrite(reset_pin, HIGH);
-    DelayMs(200);   
+    DelayMs(200);
 }
 
 /**
  *  @brief: set the look-up tables
  */
 void Epd::SetLut(void) {
-    unsigned int count;     
+    unsigned int count;
     SendCommand(LUT_FOR_VCOM);                            //vcom
     for(count = 0; count < 44; count++) {
         SendData(lut_vcom_dc[count]);
     }
-    
+
     SendCommand(LUT_WHITE_TO_WHITE);                      //ww --
     for(count = 0; count < 42; count++) {
         SendData(lut_ww[count]);
-    }   
-    
+    }
+
     SendCommand(LUT_BLACK_TO_WHITE);                      //bw r
     for(count = 0; count < 42; count++) {
         SendData(lut_bw[count]);
-    } 
+    }
 
     SendCommand(LUT_WHITE_TO_BLACK);                      //wb w
     for(count = 0; count < 42; count++) {
         SendData(lut_bb[count]);
-    } 
+    }
 
     SendCommand(LUT_BLACK_TO_BLACK);                      //bb b
     for(count = 0; count < 42; count++) {
         SendData(lut_wb[count]);
-    } 
+    }
 }
 
 /**
  *  @brief: transmit partial data to the SRAM
  */
-void Epd::TransmitPartial(const unsigned char* buffer_black, const unsigned char* buffer_red, int x, int y, int w, int l) {   
+void Epd::TransmitPartial(const unsigned char* buffer_black, const unsigned char* buffer_red, int x, int y, int w, int l) {
     if (buffer_black != NULL) {
         SendCommand(PARTIAL_DATA_START_TRANSMISSION_1);
         SendData(x >> 8);
         SendData(x & 0xf8);     // x should be the multiple of 8, the last 3 bit will always be ignored
-        SendData(y >> 8);        
+        SendData(y >> 8);
         SendData(y & 0xff);
         SendData(w >> 8);
         SendData(w & 0xf8);     // w (width) should be the multiple of 8, the last 3 bit will always be ignored
-        SendData(l >> 8);        
+        SendData(l >> 8);
         SendData(l & 0xff);
         DelayMs(2);
         for(int i = 0; i < w  / 8 * l; i++) {
-            SendData(buffer_black[i]);  
-        }  
-        DelayMs(2);                  
+            SendData(buffer_black[i]);
+        }
+        DelayMs(2);
     }
     if (buffer_red != NULL) {
         SendCommand(PARTIAL_DATA_START_TRANSMISSION_2);
         SendData(x >> 8);
         SendData(x & 0xf8);     // x should be the multiple of 8, the last 3 bit will always be ignored
-        SendData(y >> 8);        
+        SendData(y >> 8);
         SendData(y & 0xff);
         SendData(w >> 8);
         SendData(w & 0xf8);     // w (width) should be the multiple of 8, the last 3 bit will always be ignored
-        SendData(l >> 8);        
+        SendData(l >> 8);
         SendData(l & 0xff);
         DelayMs(2);
         for(int i = 0; i < w  / 8 * l; i++) {
-            SendData(buffer_red[i]);  
-        }  
-        DelayMs(2);                  
+            SendData(buffer_red[i]);
+        }
+        DelayMs(2);
     }
 }
 
@@ -222,17 +222,17 @@ void Epd::TransmitPartialBlack(const unsigned char* buffer_black, int x, int y, 
         SendCommand(PARTIAL_DATA_START_TRANSMISSION_1);
         SendData(x >> 8);
         SendData(x & 0xf8);     // x should be the multiple of 8, the last 3 bit will always be ignored
-        SendData(y >> 8);        
+        SendData(y >> 8);
         SendData(y & 0xff);
         SendData(w >> 8);
         SendData(w & 0xf8);     // w (width) should be the multiple of 8, the last 3 bit will always be ignored
-        SendData(l >> 8);        
+        SendData(l >> 8);
         SendData(l & 0xff);
         DelayMs(2);
         for(int i = 0; i < w  / 8 * l; i++) {
-            SendData(buffer_black[i]);  
-        }  
-        DelayMs(2);                  
+            SendData(buffer_black[i]);
+        }
+        DelayMs(2);
     }
 }
 
@@ -244,17 +244,17 @@ void Epd::TransmitPartialRed(const unsigned char* buffer_red, int x, int y, int 
         SendCommand(PARTIAL_DATA_START_TRANSMISSION_2);
         SendData(x >> 8);
         SendData(x & 0xf8);     // x should be the multiple of 8, the last 3 bit will always be ignored
-        SendData(y >> 8);        
+        SendData(y >> 8);
         SendData(y & 0xff);
         SendData(w >> 8);
         SendData(w & 0xf8);     // w (width) should be the multiple of 8, the last 3 bit will always be ignored
-        SendData(l >> 8);        
+        SendData(l >> 8);
         SendData(l & 0xff);
         DelayMs(2);
         for(int i = 0; i < w  / 8 * l; i++) {
-            SendData(buffer_red[i]);  
-        }  
-        DelayMs(2);                  
+            SendData(buffer_red[i]);
+        }
+        DelayMs(2);
     }
 }
 
@@ -262,16 +262,16 @@ void Epd::TransmitPartialRed(const unsigned char* buffer_red, int x, int y, int 
  * @brief: refreshes a specific part of the display
  */
 void Epd::RefreshPartial(int x, int y, int w, int l) {
-    SendCommand(PARTIAL_DISPLAY_REFRESH); 
+    SendCommand(PARTIAL_DISPLAY_REFRESH);
     SendData(x >> 8);
     SendData(x & 0xf8);     // x should be the multiple of 8, the last 3 bit will always be ignored
-    SendData(y >> 8);        
+    SendData(y >> 8);
     SendData(y & 0xff);
     SendData(w >> 8);
     SendData(w & 0xf8);     // w (width) should be the multiple of 8, the last 3 bit will always be ignored
-    SendData(l >> 8);        
+    SendData(l >> 8);
     SendData(l & 0xff);
-   
+
     WaitUntilIdle();
 }
 
@@ -281,27 +281,27 @@ void Epd::RefreshPartial(int x, int y, int w, int l) {
 void Epd::DisplayFrame(const unsigned char* frame_buffer_black, const unsigned char* frame_buffer_red) {
     SendCommand(TCON_RESOLUTION);
     SendData(width >> 8);
-    SendData(width & 0xff);        //176      
-    SendData(height >> 8);        
+    SendData(width & 0xff);        //176
+    SendData(height >> 8);
     SendData(height & 0xff);         //264
 
     if (frame_buffer_black != NULL) {
-        SendCommand(DATA_START_TRANSMISSION_1);           
+        SendCommand(DATA_START_TRANSMISSION_1);
         DelayMs(2);
-        for(int i = 0; i < width * height / 8; i++) {
-            SendData(pgm_read_byte(&frame_buffer_black[i]));  
-        }  
+        for(unsigned int i = 0; i < width * height / 8; i++) {
+            SendData(pgm_read_byte(&frame_buffer_black[i]));
+        }
         DelayMs(2);
     }
     if (frame_buffer_red != NULL) {
         SendCommand(DATA_START_TRANSMISSION_2);
         DelayMs(2);
-        for(int i = 0; i < width * height / 8; i++) {
-            SendData(pgm_read_byte(&frame_buffer_red[i]));  
-        }  
+        for(unsigned int i = 0; i < width * height / 8; i++) {
+            SendData(pgm_read_byte(&frame_buffer_red[i]));
+        }
         DelayMs(2);
     }
-    SendCommand(DISPLAY_REFRESH); 
+    SendCommand(DISPLAY_REFRESH);
 
     WaitUntilIdle();
 }
@@ -312,21 +312,21 @@ void Epd::DisplayFrame(const unsigned char* frame_buffer_black, const unsigned c
 void Epd::ClearFrame(void) {
     SendCommand(TCON_RESOLUTION);
     SendData(width >> 8);
-    SendData(width & 0xff);        //176      
-    SendData(height >> 8);        
+    SendData(width & 0xff);        //176
+    SendData(height >> 8);
     SendData(height & 0xff);         //264
 
-    SendCommand(DATA_START_TRANSMISSION_1);           
+    SendCommand(DATA_START_TRANSMISSION_1);
     DelayMs(2);
-    for(int i = 0; i < width * height / 8; i++) {
-        SendData(0x00);  
-    }  
+    for(unsigned int i = 0; i < width * height / 8; i++) {
+        SendData(0x00);
+    }
     DelayMs(2);
-    SendCommand(DATA_START_TRANSMISSION_2);           
+    SendCommand(DATA_START_TRANSMISSION_2);
     DelayMs(2);
-    for(int i = 0; i < width * height / 8; i++) {
-        SendData(0x00);  
-    }  
+    for(unsigned int i = 0; i < width * height / 8; i++) {
+        SendData(0x00);
+    }
     DelayMs(2);
 }
 
@@ -334,14 +334,14 @@ void Epd::ClearFrame(void) {
  * @brief: This displays the frame data from SRAM
  */
 void Epd::DisplayFrame(void) {
-    SendCommand(DISPLAY_REFRESH); 
+    SendCommand(DISPLAY_REFRESH);
     WaitUntilIdle();
 }
 
 /**
- * @brief: After this command is transmitted, the chip would enter the deep-sleep mode to save power. 
- *         The deep sleep mode would return to standby by hardware reset. The only one parameter is a 
- *         check code, the command would be executed if check code = 0xA5. 
+ * @brief: After this command is transmitted, the chip would enter the deep-sleep mode to save power.
+ *         The deep sleep mode would return to standby by hardware reset. The only one parameter is a
+ *         check code, the command would be executed if check code = 0xA5.
  *         You can use Epd::Reset() to awaken and use Epd::Init() to initialize.
  */
 void Epd::Sleep() {
@@ -352,13 +352,13 @@ void Epd::Sleep() {
 const unsigned char lut_vcom_dc[] =
 {
 0x00, 0x00,
-0x00, 0x1A, 0x1A, 0x00, 0x00, 0x01,        
-0x00, 0x0A, 0x0A, 0x00, 0x00, 0x08,        
-0x00, 0x0E, 0x01, 0x0E, 0x01, 0x10,        
-0x00, 0x0A, 0x0A, 0x00, 0x00, 0x08,        
-0x00, 0x04, 0x10, 0x00, 0x00, 0x05,        
-0x00, 0x03, 0x0E, 0x00, 0x00, 0x0A,        
-0x00, 0x23, 0x00, 0x00, 0x00, 0x01    
+0x00, 0x1A, 0x1A, 0x00, 0x00, 0x01,
+0x00, 0x0A, 0x0A, 0x00, 0x00, 0x08,
+0x00, 0x0E, 0x01, 0x0E, 0x01, 0x10,
+0x00, 0x0A, 0x0A, 0x00, 0x00, 0x08,
+0x00, 0x04, 0x10, 0x00, 0x00, 0x05,
+0x00, 0x03, 0x0E, 0x00, 0x00, 0x0A,
+0x00, 0x23, 0x00, 0x00, 0x00, 0x01
 };
 
 //R21H

@@ -2,7 +2,7 @@
  *  @filename   :   epdpaint.cpp
  *  @brief      :   Paint tools
  *  @author     :   Yehui from Waveshare
- *  
+ *
  *  Copyright (C) Waveshare     September 9 2017
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -143,7 +143,7 @@ void Paint::DrawPixel(int x, int y, int colored) {
  *  @brief: this draws a charactor on the frame buffer but not refresh
  */
 void Paint::DrawCharAt(int x, int y, char ascii_char, sFONT* font, int colored) {
-    int i, j;
+    uint16_t i, j;
     unsigned int char_offset = (ascii_char - ' ') * font->Height * (font->Width / 8 + (font->Width % 8 ? 1 : 0));
     const unsigned char* ptr = &font->table[char_offset];
 
@@ -169,7 +169,7 @@ void Paint::DrawStringAt(int x, int y, const char* text, sFONT* font, int colore
     const char* p_text = text;
     unsigned int counter = 0;
     int refcolumn = x;
-    
+
     /* Send the string character by character on EPD */
     while (*p_text != 0) {
         /* Display one character on EPD */
@@ -195,12 +195,12 @@ void Paint::DrawLine(int x0, int y0, int x1, int y1, int colored) {
 
     while((x0 != x1) && (y0 != y1)) {
         DrawPixel(x0, y0 , colored);
-        if (2 * err >= dy) {     
+        if (2 * err >= dy) {
             err += dy;
             x0 += sx;
         }
         if (2 * err <= dx) {
-            err += dx; 
+            err += dx;
             y0 += sy;
         }
     }
@@ -235,7 +235,7 @@ void Paint::DrawRectangle(int x0, int y0, int x1, int y1, int colored) {
     max_x = x1 > x0 ? x1 : x0;
     min_y = y1 > y0 ? y0 : y1;
     max_y = y1 > y0 ? y1 : y0;
-    
+
     DrawHorizontalLine(min_x, min_y, max_x - min_x + 1, colored);
     DrawHorizontalLine(min_x, max_y, max_x - min_x + 1, colored);
     DrawVerticalLine(min_x, min_y, max_y - min_y + 1, colored);
@@ -252,7 +252,7 @@ void Paint::DrawFilledRectangle(int x0, int y0, int x1, int y1, int colored) {
     max_x = x1 > x0 ? x1 : x0;
     min_y = y1 > y0 ? y0 : y1;
     max_y = y1 > y0 ? y1 : y0;
-    
+
     for (i = min_x; i <= max_x; i++) {
       DrawVerticalLine(i, min_y, max_y - min_y + 1, colored);
     }

@@ -52,102 +52,100 @@
  * THE SOFTWARE.
  */
 
-#include <SPI.h>
-#include <epd2in7b.h>
 #include "imagedata.h"
-#include <epdpaint.h>
+#include <SPI.h>
 #include <Wire.h>
+#include <epd2in7b.h>
+#include <epdpaint.h>
 
-#ifdef ARDUINO_SAMD_VARIANT_COMPLIANCE
-  #define SERIAL SerialUSB
-#else
-  #define SERIAL Serial
-#endif
+// #ifdef ARDUINO_SAMD_VARIANT_COMPLIANCE
+//   #define SERIAL SerialUSB
+// #else
+//   #define SERIAL Serial
+// #endif
 
-#define COLORED     1
-#define UNCOLORED   0
+#define COLORED 1
+#define UNCOLORED 0
 
-#define key1    5
-#define key2    6
+#define key1 5
+#define key2 6
 
 unsigned char sw1_flag = 0;
 unsigned char sw2_flag = 0;
 
 void setup()
 {
-  // put your setup code here, to run once:
-  SERIAL.begin(115200);
-//  Wire.begin();
-  pinMode(key1,INPUT_PULLUP);
-  pinMode(key2,INPUT_PULLUP);
-  pinMode(18,OUTPUT);
-  pinMode(19,OUTPUT);
-  digitalWrite(18,HIGH);
-  digitalWrite(19,LOW);
-  Epd epd;
+    // put your setup code here, to run once:
+    Serial.begin(115200);
+    //  Wire.begin();
+    pinMode(key1, INPUT_PULLUP);
+    pinMode(key2, INPUT_PULLUP);
+    pinMode(18, OUTPUT);
+    pinMode(19, OUTPUT);
+    digitalWrite(18, HIGH);
+    digitalWrite(19, LOW);
+    Epd epd;
 
-  SERIAL.println("Grove i2c port OK");
-  if (epd.Init() != 0)
-  {
-    SERIAL.println("e-Paper init failed");
-    return;
-  }
-  else
-    SERIAL.println("e-Paper init OK");
+    Serial.println("Grove i2c port OK");
+    if (epd.Init() != 0) {
+        Serial.println("e-Paper init failed");
+        return;
+    } else
+        Serial.println("e-Paper init OK");
 
-  /* This clears the SRAM of the e-paper display */
-  epd.ClearFrame();
+    /* This clears the SRAM of the e-paper display */
+    epd.ClearFrame();
 
-  /**
-    * Due to RAM not enough in Arduino UNO, a frame buffer is not allowed.
-    * In this case, a smaller image buffer is allocated and you have to
-    * update a partial display several times.
-    * 1 byte = 8 pixels, therefore you have to set 8*N pixels at a time.
-    */
-  unsigned char image[1024];
-  Paint paint(image, 176, 24);    //width should be the multiple of 8
+    /**
+     * Due to RAM not enough in Arduino UNO, a frame buffer is not allowed.
+     * In this case, a smaller image buffer is allocated and you have to
+     * update a partial display several times.
+     * 1 byte = 8 pixels, therefore you have to set 8*N pixels at a time.
+     */
+    unsigned char image[1024];
+    Paint paint(image, 176, 24); // width should be the multiple of 8
 
-  paint.Clear(UNCOLORED);
-  paint.DrawStringAt(0, 0, "e-Paper Demo", &Font16, COLORED);
-  // epd.TransmitPartialBlack(paint.GetImage(), 16, 32, paint.GetWidth(), paint.GetHeight());
+    paint.Clear(UNCOLORED);
+    paint.DrawStringAt(0, 0, "e-Paper Demo", &Font16, COLORED);
+    epd.TransmitPartialBlack(paint.GetImage(), 16, 32, paint.GetWidth(), paint.GetHeight());
 
-  // paint.Clear(COLORED);
-  // paint.DrawStringAt(2, 2, "Hello world!", &Font20, UNCOLORED);
-  // epd.TransmitPartialRed(paint.GetImage(), 0, 64, paint.GetWidth(), paint.GetHeight());
+    paint.Clear(COLORED);
+    paint.DrawStringAt(2, 2, "Hello world!", &Font20, UNCOLORED);
+    epd.TransmitPartialRed(paint.GetImage(), 0, 64, paint.GetWidth(), paint.GetHeight());
 
-  // paint.SetWidth(64);
-  // paint.SetHeight(64);
+    paint.SetWidth(64);
+    paint.SetHeight(64);
 
-  // paint.Clear(UNCOLORED);
-  // paint.DrawRectangle(0, 0, 40, 50, COLORED);
-  // paint.DrawLine(0, 0, 40, 50, COLORED);
-  // paint.DrawLine(40, 0, 0, 50, COLORED);
-  // epd.TransmitPartialBlack(paint.GetImage(), 10, 130, paint.GetWidth(), paint.GetHeight());
+    paint.Clear(UNCOLORED);
+    paint.DrawRectangle(0, 0, 40, 50, COLORED);
+    paint.DrawLine(0, 0, 40, 50, COLORED);
+    paint.DrawLine(40, 0, 0, 50, COLORED);
+    epd.TransmitPartialBlack(paint.GetImage(), 10, 130, paint.GetWidth(), paint.GetHeight());
 
-  // paint.Clear(UNCOLORED);
-  // paint.DrawCircle(32, 32, 30, COLORED);
-  // epd.TransmitPartialBlack(paint.GetImage(), 90, 120, paint.GetWidth(), paint.GetHeight());
+    paint.Clear(UNCOLORED);
+    paint.DrawCircle(32, 32, 30, COLORED);
+    epd.TransmitPartialBlack(paint.GetImage(), 90, 120, paint.GetWidth(), paint.GetHeight());
 
-  // paint.Clear(UNCOLORED);
-  // paint.DrawFilledRectangle(0, 0, 40, 50, COLORED);
-  // epd.TransmitPartialRed(paint.GetImage(), 10, 200, paint.GetWidth(), paint.GetHeight());
+    paint.Clear(UNCOLORED);
+    paint.DrawFilledRectangle(0, 0, 40, 50, COLORED);
+    epd.TransmitPartialRed(paint.GetImage(), 10, 200, paint.GetWidth(), paint.GetHeight());
 
-  // paint.Clear(UNCOLORED);
-  // paint.DrawFilledCircle(32, 32, 30, COLORED);
-  // epd.TransmitPartialRed(paint.GetImage(), 90, 190, paint.GetWidth(), paint.GetHeight());
+    paint.Clear(UNCOLORED);
+    paint.DrawFilledCircle(32, 32, 30, COLORED);
+    epd.TransmitPartialRed(paint.GetImage(), 90, 190, paint.GetWidth(), paint.GetHeight());
 
-  // /* This displays the data from the SRAM in e-Paper module */
-  // epd.DisplayFrame();
+    /* This displays the data from the SRAM in e-Paper module */
+    epd.DisplayFrame();
 
-  // /* This displays an image */
-  // epd.DisplayFrame(IMAGE_BLACK, IMAGE_RED);
+    /* This displays an image */
+    epd.DisplayFrame(IMAGE_BLACK, IMAGE_RED);
 
-  // SERIAL.println("Setup will end soon");
+    Serial.println("Setup will end soon");
 
-  // /* Deep sleep */
-  // epd.Sleep();
+    /* Deep sleep */
+    epd.Sleep();
 
-  // SERIAL.println("Setup end");
+    Serial.println("Setup end");
 }
 /*
 unsigned char Scann_i2c_device(void)
@@ -161,45 +159,41 @@ unsigned char Scann_i2c_device(void)
 
     if (error == 0)
     {
-      SERIAL.print("I2C device found at address 0x");
+      Serial.print("I2C device found at address 0x");
       if (address<16)
-        SERIAL.print("0");
-      SERIAL.print(address,HEX);
-      SERIAL.println("  !");
+        Serial.print("0");
+      Serial.print(address,HEX);
+      Serial.println("  !");
 
       nDevices++;
     }
     else if (error==4)
     {
-      SERIAL.print("Unknow error at address 0x");
+      Serial.print("Unknow error at address 0x");
       if (address<16)
-        SERIAL.print("0");
-      SERIAL.println(address,HEX);
+        Serial.print("0");
+      Serial.println(address,HEX);
     }
   }
   return nDevices;
 }
 */
 
+void loop()
+{
+    // put your main code here, to run repeatedly:
+    if (!digitalRead(key1)) {
+        Serial.println("key1 pressed");
+        sw1_flag = 1;
+    }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-  if(!digitalRead(key1))
-  {
-    SERIAL.println("key1 pressed");
-    sw1_flag = 1;
-  }
-
-  if(!digitalRead(key2))
-  {
-    SERIAL.println("key2 pressed");
-    sw2_flag = 1;
-  }
-  if(sw1_flag&&sw2_flag)
-  {
-    digitalWrite(18,LOW);
-    digitalWrite(19,HIGH);
-    SERIAL.println("OK.");
-  }
+    if (!digitalRead(key2)) {
+        Serial.println("key2 pressed");
+        sw2_flag = 1;
+    }
+    if (sw1_flag && sw2_flag) {
+        digitalWrite(18, LOW);
+        digitalWrite(19, HIGH);
+        Serial.println("OK.");
+    }
 }
-
