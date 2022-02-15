@@ -58,6 +58,8 @@ void loop()
     static uint32_t allCount = 0;
     static uint32_t dayCount = 0;
 
+    static uint8_t lastClearDayCountDay = 0;
+
     uint32_t now = millis();
 
     if (lastDateTimeUpdate > now) {
@@ -88,6 +90,11 @@ void loop()
         display->showRightText(date, 0);
         time = String("   ") + ((tm.Hour < 10) ? "0" : "") + String(tm.Hour) + ":" + ((tm.Minute < 10) ? "0" : "") + String(tm.Minute);
         display->showRightText(time, 1);
+
+        if ((tm.Hour == 0) && (tm.Minute == 0) && (lastClearDayCountDay != tm.Day)) {
+            dayCount = 0;
+            lastClearDayCountDay = tm.Day;
+        }
 
         display->showLeftText(String(dayCount), 0);
         display->showLeftText(String(allCount), 1);
