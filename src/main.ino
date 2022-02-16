@@ -118,7 +118,6 @@ void loop()
         Serial << "distance = " <<  distance << " cm, " << "now = " << now << ", headLiftingTime = " << headLiftingTime << ", addToCount = " << (addToCount ? "true" : "false") << ", allCount = " << allCount << ", dayCount = " << dayCount << ", lastDateTimeUpdate = " << lastDateTimeUpdate << endl;
 
         if (distance < EMPTY_DISTANCE) {
-            // todo Не включать сразу, подождать, чтобы расстояние еще раз пришло такое же (защит от паразитных значений)
             if (((now - lastEmpty) > BACKLIGHT_ON_INTERVAL) && !display->getBacklight()) {
                 display->backlightOn();
             }
