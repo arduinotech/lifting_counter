@@ -24,13 +24,13 @@ void setup()
     Serial << "Checking RTC..." << endl;
     tmElements_t tm;
 
-    tm.Year = 52;
-    tm.Month = 2;
-    tm.Day = 15;
-    tm.Hour = 16;
-    tm.Minute = 46;
+    // tm.Year = 52;
+    // tm.Month = 2;
+    // tm.Day = 16;
+    // tm.Hour = 17;
+    // tm.Minute = 11;
 
-    RTC.write(tm);
+    // RTC.write(tm);
 
 
     if (RTC.read(tm)) {
