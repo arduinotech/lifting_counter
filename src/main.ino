@@ -1,10 +1,53 @@
 #include "hardware/Config.h"
 #include "hardware/Display.h"
+#include "hardware/Storage.h"
 #include <Arduino.h>
 #include <DS1307RTC.h>
-#include <Streaming.h>
+// #include <Streaming.h>
 
 Display *display;
+Storage *storage;
+
+uint32_t allCount;
+uint32_t dayCount;
+
+Date date;
+
+void resetDayCount()
+{
+    date = storage->getDate();
+    tmElements_t tm;
+    RTC.read(tm);
+    if ((tm.Year != date.year) || (tm.Month != date.month) || (tm.Day != date.day)) {
+        if (dayCount != 0) {
+            dayCount = 0;
+            if (dayCount != storage->getDayCount()) {
+                storage->putDayCount(dayCount);
+            }
+        }
+        date.year = tm.Year;
+        date.month = tm.Month;
+        date.day = tm.Day;
+        storage->putDate(date);
+    }
+}
+
+void showCurrentDateAndTime()
+{
+    tmElements_t tm;
+    RTC.read(tm);
+    String date, time;
+    date = ((tm.Day < 10) ? "0" : "") + String(tm.Day) + "-" + ((tm.Month < 10) ? "0" : "") + String(tm.Month) + "-" + (tmYearToCalendar(tm.Year) - 2000);
+    display->showRightText(date, 0);
+    time = String("   ") + ((tm.Hour < 10) ? "0" : "") + String(tm.Hour) + ":" + ((tm.Minute < 10) ? "0" : "") + String(tm.Minute);
+    display->showRightText(time, 1);
+}
+
+void showCounts()
+{
+    display->showLeftText("Day:" + String(dayCount), 0);
+    display->showLeftText("All:" + String(allCount), 1);
+}
 
 void setup()
 {
@@ -12,36 +55,20 @@ void setup()
     pinMode(HC_SR04_TRIG_PIN, OUTPUT);
     pinMode(HC_SR04_ECHO_PIN, INPUT);
 
-    Serial.begin(115200);
-    while (!Serial) {
-    }
-
-    Serial << "Setup...";
+    // Serial.begin(115200);
+    // while (!Serial) {
+    // }
 
     display = new Display(LCD_ADDR, LCD_COLS, LCD_ROWS);
+    storage = new Storage();
 
-    // Проверяем RTC
-    Serial << "Checking RTC..." << endl;
-    tmElements_t tm;
+    date = storage->getDate();
+    allCount = storage->getAllCount();
+    dayCount = storage->getDayCount();
 
-    // tm.Year = 52;
-    // tm.Month = 2;
-    // tm.Day = 16;
-    // tm.Hour = 17;
-    // tm.Minute = 11;
-
-    // RTC.write(tm);
-
-
-    if (RTC.read(tm)) {
-        Serial << "Current time: " << ((tm.Hour < 10) ? "0" : "") << tm.Hour << ":" << ((tm.Minute < 10) ? "0" : "")
-               << tm.Minute << ":" << ((tm.Second < 10) ? "0" : "") << tm.Second << " " << tmYearToCalendar(tm.Year)
-               << "-" << ((tm.Month < 10) ? "0" : "") << tm.Month << "-" << ((tm.Day < 10) ? "0" : "") << tm.Day << endl;
-    } else {
-        Serial << "RTC fail!" << endl;
-    }
-
-    Serial << " OK" << endl;
+    resetDayCount();
+    showCurrentDateAndTime();
+    showCounts();
 }
 
 void loop()
@@ -51,14 +78,10 @@ void loop()
     static uint32_t lastNear = 0;
     static uint32_t lastAddCount = 0;
     static uint32_t lastEmpty = 0;
+    static uint32_t lastBackup = 0;
 
     static uint32_t headLiftingTime = 0;
     static bool addToCount = false;
-
-    static uint32_t allCount = 0;
-    static uint32_t dayCount = 0;
-
-    static uint8_t lastClearDayCountDay = 0;
 
     uint32_t now = millis();
 
@@ -82,28 +105,19 @@ void loop()
         lastEmpty = now;
     }
 
+    if (lastBackup > now) {
+        lastBackup = now;
+    }
+
     if (now > (lastDateTimeUpdate + DATE_TIME_UPDATE_INTERVAL)) {
-        tmElements_t tm;
-        RTC.read(tm);
-        String date, time;
-        date = ((tm.Day < 10) ? "0" : "") + String(tm.Day) + "-" + ((tm.Month < 10) ? "0" : "") + String(tm.Month) + "-" + (tmYearToCalendar(tm.Year) - 2000);
-        display->showRightText(date, 0);
-        time = String("   ") + ((tm.Hour < 10) ? "0" : "") + String(tm.Hour) + ":" + ((tm.Minute < 10) ? "0" : "") + String(tm.Minute);
-        display->showRightText(time, 1);
-
-        if ((tm.Hour == 0) && (tm.Minute == 0) && (lastClearDayCountDay != tm.Day)) {
-            dayCount = 0;
-            lastClearDayCountDay = tm.Day;
-        }
-
-        display->showLeftText(String(dayCount), 0);
-        display->showLeftText(String(allCount), 1);
+        resetDayCount();
+        showCurrentDateAndTime();
+        showCounts();
 
         lastDateTimeUpdate = now;
     }
 
     if (now > (lastDistanceUpdate + DISTANCE_UPDATE_INTERVAL)) {
-
         int duration;
         int distance;
 
@@ -115,7 +129,6 @@ void loop()
 
         duration = pulseIn(HC_SR04_ECHO_PIN, HIGH);
         distance = duration / 58;
-        Serial << "distance = " <<  distance << " cm, " << "now = " << now << ", headLiftingTime = " << headLiftingTime << ", addToCount = " << (addToCount ? "true" : "false") << ", allCount = " << allCount << ", dayCount = " << dayCount << ", lastDateTimeUpdate = " << lastDateTimeUpdate << endl;
 
         if (distance < EMPTY_DISTANCE) {
             if (((now - lastEmpty) > BACKLIGHT_ON_INTERVAL) && !display->getBacklight()) {
@@ -123,8 +136,6 @@ void loop()
             }
             lastNear = now;
         }
-
-
 
         if (distance > EMPTY_DISTANCE) {
             if (((now - lastNear) > BACKLIGHT_OFF_INTERVAL) && display->getBacklight()) {
@@ -144,8 +155,7 @@ void loop()
                 addToCount = true;
                 tone(SPEAKER_PIN, 700, 100);
                 lastAddCount = now;
-                display->showLeftText(String(dayCount), 0);
-                display->showLeftText(String(allCount), 1);
+                showCounts();
             }
         }
 
@@ -153,10 +163,19 @@ void loop()
             addToCount = false;
             headLiftingTime = 0;
         }
-
-
-
-
         lastDistanceUpdate = now;
     }
+
+    if (now > (lastBackup + BACKUP_COUNTS_INTERVAL)) {
+        if (allCount != storage->getAllCount()) {
+            storage->putAllCount(allCount);
+        }
+
+        if (dayCount != storage->getDayCount()) {
+            storage->putDayCount(dayCount);
+        }
+
+        lastBackup = now;
+    }
 }
+

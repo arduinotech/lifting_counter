@@ -1,5 +1,4 @@
 #include "Display.h"
-#include <Streaming.h>
 
 // Делим экран на сегменты, длина левого блока (символы)
 #define LEFT_SIGNS_COUNT 8
